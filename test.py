@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# import Image
+import matplotlib.image as mpimg
 import matplotlib.widgets as widgets
 import cv2
 
@@ -19,7 +19,7 @@ filename = "test_images/straight_lines1.jpg"
 filename = "test_images/undistorted-01.jpg"
 
 # im = Image.open(filename)
-im = cv2.imread(filename)
+im = mpimg.imread(filename)
 arr = np.asarray(im)
 plt_image = plt.imshow(arr)
 
