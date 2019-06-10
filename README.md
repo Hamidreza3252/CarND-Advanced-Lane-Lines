@@ -1,41 +1,90 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
-![Lanes Image](./examples/example_output.jpg)
+## An Overview of Advanced Lane Finding Pipeline  
 
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
+**Note:** This project is also available on [https://github.com/Hamidreza3252/CarND-Advanced-Lane-Lines](Gitbub)  
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
+**Here are the steps I took to develop advanced lane detection pipeline**  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
+Below, I have explained the classes I have introduced just to improve logic design, code readability and traceability. 
 
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
+## 1. Defining `Camera` Class  
 
-The Project
----
+`Camera` class implements the methods required to calibrate, undistort, warp, and unwarp an image. These methods are used in the pipeline below to extract the lanes. It also keeps and encapsulates the calibrated paramters. 
 
-The goals / steps of this project are the following:
+- `class Camera`  
+  - `calibrate` : To compute the camera calibration matrix and distortion coefficients. it should be called only once. To do so, this function reads all the chessboard images uploaded in the specifed folder and it tries to calibrate based on these pics. 
+  - `undistort` : To undistort an image by applying the calibrated parameters.  
+  - `calibratePerspectiveTransform` : To calibrate perspective transfrm paramters using the following steps. These params are used for both warp and unwarp functions. 
+    * Identify four source points for the perspective transform. In this case, we assume the road is a flat plane. This isn't strictly true, but it can serve as an approximation for this project. 
 
-* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-* Apply a distortion correction to raw images.
-* Use color transforms, gradients, etc., to create a thresholded binary image.
-* Apply a perspective transform to rectify binary image ("birds-eye view").
-* Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
-* Warp the detected lane boundaries back onto the original image.
-* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
+    * Pick four points in a trapezoidal shape (similar to region masking) that would represent a rectangle when looking down on the road from above. The easiest way to do this is to investigate an image where the lane lines are straight, and find four points lying along the lines that, after perspective transform, make the lines look straight and vertical from a bird's eye view perspective.
+    
+    * Those same four source points will now work to transform any image (again, under the assumption that the road is flat and the camera perspective hasn't changed). When applying the transform to new images, the test of whether or not you got the transform correct, is that the lane lines should appear parallel in the warped images, whether they are straight or curved.
 
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
 
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `output_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+  - `warp` : To warp an image - to eye-bird view transformation. 
+  - `unwarp` : To warp an image - to perspective view transformation. 
+  
+***
 
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
+**Note:** Source points are the `x` and `y` pixel values of any four corners on the chessboard. They can be extracted from the corners array output from `cv2.findChessboardCorners()`. So, the destination points are the `x` and `y` pixel values of where we want those four corners to be mapped on in the output image.  
 
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+## 2. Defining `ImageColorTransform` Class  
 
-=======
-# CarND-Advanced-Lane-Lines
+`ImageColorTransform` class implements the methods required to transform an image to a binary image, capturing lanes using different approaches and thresholds. It also introduces some variable to bookkeep Sobel calculated values and lane-fit paramters. This bookkeeping helps to get improved perfrmance by avoding some unnecesary re-calculations. Example of these variables are `sobelX`, `sobelY`, `leftLanePolyFitParams`, and `rightLanePolyFitParams`. The local threshold variables, that are introduced within these methods, are calibrated after several trials on test and challenge videos - although more works need to be done to get better result for '*even-harder*' challenge video.  
+
+- `class ImageColorTransform`  
+  - `regionOfInterest` :  
+      To extract an image focused on a the front side of the car / camera. This is done by defining a trapezoidal mask applied to the input image. 
+  - `sobelAbsoluteFilter`, `sobelMagnitudeFilter`, and `sobelDirectionFilter` methods :  
+      These methods are used to calculate Sobel gradient measures in `x` and `y` durections and apply threshods to obtain binary images, filtering out the lanes.  
+    
+  - `getCombinedFiltersImage` :  
+      This function takes an input image and returns a binary image by combining the best approaches to extract lanes. These approaches are combinations of Saturation and Red channels together with the gradients with some ligh-depedent thresholds. It first divides the y-zone into `zoneCount` portions and then each parameter is applied based on the ligh condition of that zone. Here are some of the parameters calibrated based on zonal light conditions: 
+    * `sSobelXThresholds` :  Sobel threshold of S-channel in `x` direction  
+    * `sSobelYThresholds` :  Sobel threshold of S-channel in `y` direction  
+    * `rSobelXThresholds` :  Sobel threshold of Red-channel in `x` direction  
+    * `rSobelYThresholds` :  Sobel threshold of Red-channel in `y` direction  
+    * `saturationIntensityFactor` : An intensity factor that is multiplied with the average saturation value of each zone to filter out some noises based on lighting conditions 
+    * `lightIntensityFactor` : An intensity factor that is multiplied with the average light value of each zone to filter out pixels with less lighting value  
+    
+    It should be noted that these parameters are calibrated for different lighting conditions. `meanZoneLight < 50`, `meanZoneLight < 100`, `meanZoneLight < 130`, `meanZoneLight < 150`, and `meanZoneLight > 150`. This function returns `combinedBinaryImage` which is obtained by combining different thresholds - ref to the maon body of the function below.  
+
+  - `findLanePixels` :  
+    This function takes a binary warped (transformed to bird-eye view) image as input and returns the coordinates of the points that are likely placed at the left and right lanes. It performs a *window-based* search to identify the white points on the lanes. One big difference - or improvement  - done to the counter method implemented as a part of the quiz is as follows: I noticd that the previous implementaion would treat the points that are closer to the camera the same way as the ones that are far from it. This usually creates a problem of confusing the algorithm available sources of noises far from the camera. So I have introduced a weight-based pixel counting to mitigate this situaiton.  
+    
+  - `mapNewPolynomialToLanes` :  
+    This function takes a binary warped (transformed to bird-eye view) image as an input and it performs a while lane search method using a fresh start approach, by searching for windows containing the lanes - as explained above. It returns `yPoints`, `leftLaneFitXs` (parabola fit parameters of the left lane), `rightLaneFitXs` (parabola fit parameters of the right lane), `leftLaneCurveRad` (curvature of the left lane), `rightLaneCurveRad` (curvature of the right lane), and `resultImage` in which the area between the lanes are shaded by green color.  
+    
+  - `mapPolynomialToLanesBySearch` :  
+    This function takes a binary warped (transformed to bird-eye view) image as an input and it performs a while lane search method using search method. Search method works with the previoudly calculated lane fit paramters and finds the new lane parameters using the previous fit parameters. This should improve the performance as compared to the method above, searching for windows in each frame. Like `mapNewPolynomialToLanes` function, it returns `yPoints`, `leftLaneFitXs` (parabola fit parameters of the left lane), `rightLaneFitXs` (parabola fit parameters of the right lane), `leftLaneCurveRad` (curvature of the left lane), `rightLaneCurveRad` (curvature of the right lane), and `resultImage` in which the area between the lanes are shaded by green color. 
+    **Note:** If this functin fails to find new lanes, it returns a None value as `fitLaneImage` variable, trigerring the fresh *window-based* search algorithm. 
+
+
+### Some OpenCV functions used for this project  
+
+- `cv2.inRange()` for color selection  
+- `cv2.fillPoly()` for regions selection  
+- `cv2.line()` to draw lines on an image given endpoints  
+- `cv2.addWeighted()` to coadd / overlay two images  
+- `cv2.cvtColor()` to grayscale or change color  
+- `cv2.imwrite()` to output images to file  
+- `cv2.bitwise_and()` to apply a mask to an image
+
+
+******************************
+
+## Sample Videos 
+
+### Project Video  
+
+[![](https://img.youtube.com/vi/V-sJOy1lv6I/0.jpg)](https://youtu.be/V-sJOy1lv6I "Click to play on YouTube")
+
+### Challenge Video  
+
+[![](https://img.youtube.com/vi/RbLHkC7lZT8/0.jpg)](https://youtu.be/RbLHkC7lZT8 "Click to play on YouTube")
+
+### Harder Challenge Video  
+
+[![](https://img.youtube.com/vi/7VhWT4HIIok/0.jpg)](https://youtu.be/7VhWT4HIIok "Click to play on YouTube")
+
