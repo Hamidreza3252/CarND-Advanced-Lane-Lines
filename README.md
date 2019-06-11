@@ -78,13 +78,35 @@ Below, I have explained the classes I have introduced just to improve logic desi
 
 ### Project Video  
 
-[![](https://img.youtube.com/vi/V-sJOy1lv6I/0.jpg)](https://youtu.be/V-sJOy1lv6I "Click to play on YouTube")
+[![](https://img.youtube.com/vi/0T9mkJjB5u8/0.jpg)](https://youtu.be/0T9mkJjB5u8 "Click to play on YouTube")
 
 ### Challenge Video  
 
-[![](https://img.youtube.com/vi/RbLHkC7lZT8/0.jpg)](https://youtu.be/RbLHkC7lZT8 "Click to play on YouTube")
+[![](https://img.youtube.com/vi/hCkuy5NrEjo/0.jpg)](https://youtu.be/hCkuy5NrEjo "Click to play on YouTube")
 
 ### Harder Challenge Video  
 
-[![](https://img.youtube.com/vi/7VhWT4HIIok/0.jpg)](https://youtu.be/7VhWT4HIIok "Click to play on YouTube")
+[![](https://img.youtube.com/vi/cwilCP9gWJc/0.jpg)](https://youtu.be/cwilCP9gWJc "Click to play on YouTube")
 
+
+## 3. Discussions  
+
+### Some Problems Issues Faced: 
+
+- Different illumination / lighting conditions. To overcome this challenge, I had to split the image into miltiple smaller zones and check the average lighting conditions of each zone. The parameters are then calibrated for each lighting conditions.  
+
+- In the original window-based search algorithm suggested by Udacity, I noticed that the start point of left and right lanes are affected by the white points far from the car camera. Ideally this should not cause any issue by nature, but since there are likely some wrong indications or noises where the lanes merge - far from the car camera - that would influence the start point estimation in a negative way. So I had to modify the algorithm by introducing a weight function, penalizing those far points ina linear regressin manner.  
+
+- I have also noticed that there are some discrepancies between images loaded by `matplotlib.image` and the one extracted from video using `fl_image`, making it slightly challenging to debug the code, as I was not able to get identical results while procesing images alone. I have posted the detailed discussion on the issue in StackOverflow portal, hopefully someone could take a look. 
+[Click Here](https://stackoverflow.com/questions/56464012/discrepancies-between-images-loaded-by-matplotlib-image-and-the-one-extracted)
+
+
+### Some Improvement Areas  
+
+- The algorithm should work well to an acceptable extent as far as two lanes are visible at least up to some extent. As shown in *harder-challenge video* once the car approach a sharp turn, suddenly one lane may not be visible. Since I wanted to submit the project at this stage, I had not spent time to account for this situation, i.e. working only with a single lane visible. 
+
+- Light reflection - from back window or side mirror of the front cars for example - could give result it failure of the algorithm to. This can be resolved by better calibration of the already-introducrd parameters, that are set based on diffeernt lighting conditions. This scenario is also observed in *harder-challenge video*. Will work on it to improve the performance after this revision. 
+
+- When the lanes marge far from the camera, it is challenging to distinguish between lanes and light reflections. That would possibly confuse the algorithm too. One potential solution is to incentify the lanes detected closer to the camera. 
+
+- no matter how hard we try to obtain the best performace using Cv only, there are certain situations that pure CV-based algorithms would fail, as discussed in the [link](https://towardsdatascience.com/lane-detection-with-deep-learning-part-1-9e096f3320b7) introduced for example. Deep learning can significantly help close this gap and incease accuracy. 
