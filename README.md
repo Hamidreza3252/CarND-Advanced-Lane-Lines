@@ -78,15 +78,15 @@ Below, I have explained the classes I have introduced just to improve logic desi
 
 ### Project Video  
 
-[![](https://img.youtube.com/vi/0T9mkJjB5u8/0.jpg)](https://youtu.be/0T9mkJjB5u8 "Click to play on YouTube")
+[![](https://img.youtube.com/vi/I_Yy8eU5W4o/0.jpg)](https://youtu.be/I_Yy8eU5W4o "Click to play on YouTube")
 
 ### Challenge Video  
 
-[![](https://img.youtube.com/vi/hCkuy5NrEjo/0.jpg)](https://youtu.be/hCkuy5NrEjo "Click to play on YouTube")
+[![](https://img.youtube.com/vi/zUskrvXJiWU/0.jpg)](https://youtu.be/zUskrvXJiWU "Click to play on YouTube")
 
 ### Harder Challenge Video  
 
-[![](https://img.youtube.com/vi/cwilCP9gWJc/0.jpg)](https://youtu.be/cwilCP9gWJc "Click to play on YouTube")
+[![](https://img.youtube.com/vi/7aH59um29AY/0.jpg)](https://youtu.be/7aH59um29AY "Click to play on YouTube")
 
 
 ## 3. Discussions  
